@@ -138,3 +138,9 @@ This will ask you password for Kali VM, to execute as SUDO.
 ansible-playbook build-binary.yaml --ask-become-pass
 ansible-playbook encode-command.yaml
 ```
+
+## Credits
+
+https://github.com/chvancooten/OSEP-Code-Snippets
+
+
