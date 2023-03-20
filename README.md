@@ -39,6 +39,12 @@ Just use Kali Linux.
 
 ### LocalMachine(Linux/MacOS)
 
+You must configure the following 3.
+
+- Connection Option
+- Compiling Option
+- Source Code Option
+
 ### Connection option
 
 Configure the allocated IP for each Kali and Windows VM such as in the following format.
