@@ -46,7 +46,7 @@ You must configure the following 3.
 
 ### Connection option
 
-Configure the allocated IP for each Kali and Windows VM such as in the following format.
+Configure the allocated IP for each Kali and Windows VM such as in the following forma. `host`
 
 ```yaml
 [kali]
