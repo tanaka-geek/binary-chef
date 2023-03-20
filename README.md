@@ -3,8 +3,7 @@
 
 As of 2/1/2023, you can build executables, convert it to powershell, and obfuscate the *.ps1 automatically.
 
-This tool will help you with compiling executable binaries automatically.
-Using the Jinja Template of C# file, it accomplish auto insertion of code block.
+This tool will help you with compiling executable binaries automatically. Using the Jinja Template, C# file, it accomplish automated insertion of shellcode block. Also it supports automated obfuscation in Chameleon
 
 the execution steps are as in the following.
 
