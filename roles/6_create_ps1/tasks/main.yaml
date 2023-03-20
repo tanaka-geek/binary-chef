@@ -1,0 +1,34 @@
+- name: Find executables in tempdir
+  ansible.windows.win_find:
+    paths:
+    - "{{ tempdir }}"
+    patterns: '*.exe' 
+  register: exe_list
+
+- name: Move ConvertTo-Powershell.ps1 to "{{ tempdir }}"
+  template:
+    src: ConvertTo-Powershell.ps1
+    dest: "{{ tempdir }}"
+
+- name: Make Invoke-Function.ps1
+  ansible.windows.win_shell: powershell.exe -c "Import-Module {{ tempdir }}ConvertTo-Powershell.ps1; ConvertTo-Powershell -Path {{ item.path }} -Outpath {{ tempdir }}Invoke-{{ item.filename | basename | regex_replace(".exe", ".ps1") }};"
+  with_items: "{{ exe_list.files }}"
+
+- name: Delete remote PowerShell Script
+  win_file:
+    path: "{{ tempdir }}ConvertTo-Powershell.ps1"
+    state: absent
+
+- name: Find powershell scripts in tempdir
+  ansible.windows.win_find:
+    paths:
+    - "{{ tempdir }}"
+    patterns: '*.ps1' 
+  register: ps_list
+
+- name: Fetch powershell scripts 
+  fetch:
+    flat: true
+    src: "{{ item.path }}"
+    dest: codemaker/ps1/
+  with_items: "{{ ps_list.files }}"

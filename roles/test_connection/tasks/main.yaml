@@ -1,0 +1,7 @@
+- name: Pinging Kali
+  ping:
+  when: inventory_hostname in groups['kali']
+
+- name: Pinging Windows
+  win_ping:
+  when: inventory_hostname in groups['windows']

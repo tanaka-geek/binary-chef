@@ -1,0 +1,12 @@
+- name: Create Temporary directory
+  ansible.windows.win_file:
+    path: "{{ tempdir }}"
+    state: directory
+
+- name: Put payload into templates .j2 
+  template:
+    src: "{{ item }}"
+    dest: "{{ tempdir }}{{ item | basename | regex_replace('.j2$', '.cs') }}"
+  with_fileglob:
+    - "{{ src }}"
+

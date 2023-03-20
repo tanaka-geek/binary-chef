@@ -1,0 +1,16 @@
+# Before obfuscate_ps1
+
+# Now skipping it because I already have installed chameleon.
+## manually installing it be faster though
+
+# THis should be installed on /opt/
+
+# repo is at https://github.com/klezVirus/chameleon
+
+# Steps
+
+# 1. Check if /opt/chameleon is present
+
+# 2. If not installed, then git clone it
+
+# 3. Install it

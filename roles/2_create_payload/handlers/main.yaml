@@ -1,0 +1,5 @@
+# clean up 
+- name: clean up 
+  ansible.builtin.file:
+    path: /tmp/payload.txt
+    state: absent

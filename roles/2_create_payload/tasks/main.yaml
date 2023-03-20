@@ -1,0 +1,26 @@
+- name: Run msfencoder 
+  command: "/usr/bin/python3 /opt/msfencoder.py {{server}} {{ports}} {{format}} {{encrypt_method}} {{encrypt_key}} {{payload}}"
+  notify: clean up
+
+- name: Load data
+  slurp:
+    src: /tmp/payload.txt
+  register: payloadOut
+
+
+- name: Decode data and store as fact # You can skip this if you want to use the right hand side directly...
+  set_fact:
+    payloadContent: "{{ payloadOut.content | b64decode }}"
+  delegate_to: "{{ item }}" # 変数を渡すホスト
+  delegate_facts: true # fact変数の更新する場合trueにする必要がある
+  with_items: "{{ groups['all'] }}" # 全ホストに受け渡す
+
+# - name: clean up 
+#   ansible.builtin.file:
+#     path: /tmp/payload.txt
+#     state: absent
+
+# - name: "Set variables"
+#   set_fact:
+#     user_name: "admin"
+#     user_permissions: "rwx"

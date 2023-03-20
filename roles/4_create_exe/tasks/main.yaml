@@ -1,0 +1,13 @@
+- name: Find .cs files in tempdir
+  ansible.windows.win_find:
+    paths:
+    - "{{ tempdir }}"
+    patterns: '*.cs' 
+  register: file_list
+
+- name: Run csc.exe to compile .cs source code 
+  ansible.windows.win_command:
+    cmd: '"{{ compiler }}" "-platform:x64" "{{ tempdir }}{{ item.filename }}" "-out:{{ tempdir }}{{ item.filename | basename | regex_replace(".cs", ".exe") }}"'
+  with_items: "{{ file_list.files }}"
+ 
+# path C:\Program Files\Microsoft Visual Studio\2022\Preview\MSBuild\Current\Bin\Roslyn\csc.exe

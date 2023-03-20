@@ -1,0 +1,39 @@
+# Move files to Kali
+
+- name: Copy powershell scripts
+  ansible.builtin.copy:
+    src: ../../../codemaker/ps1/
+    dest: /tmp/.ps1
+    # mode: '0755'
+
+# Find 
+
+- name : Find Powershell files
+  find:
+    path: /tmp/.ps1
+    patterns: '*.ps1'
+  register: ps_list
+
+# Make sure chameleon is installed
+
+# obfuscate the powershell script
+- name: Run Chameleon 
+  command: "/usr/bin/python3 /opt/chameleon/chameleon.py -a {{ item.path }} -o {{ item.path }}"
+  loop: "{{ ps_list.files }}"
+  notify: clean up
+
+# Move it to localhost
+- name: fetch executables 
+  fetch:
+    flat: true
+    src: "{{ item.path }}"
+    dest: codemaker/obfuscated_ps1/
+  with_items: "{{ ps_list.files }}"
+
+
+
+# clean up
+## I think clean up can be done after everything is finished, like at the end instead of running it among some tasks, (which makes it difficult keep track of)
+
+
+

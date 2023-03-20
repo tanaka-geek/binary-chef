@@ -1,0 +1,7 @@
+---
+- setup:
+# - apt:
+#     update_cache: yes
+#     cache_valid_time: "{{ 3600 * 24 }}"  #Only run "update_cache=yes" if the last one is more than 3600 seconds ago
+#   when: inventory_hostname in groups['kali']
+# - shell: "apt-get clean --dry-run"

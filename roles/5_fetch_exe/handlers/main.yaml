@@ -1,0 +1,7 @@
+# delete cs files
+- name: clean up
+  ansible.windows.win_file:
+    path: "{{ item.path }}"
+    state: absent
+  with_items: "{{ file_list.files }}"
+

@@ -1,0 +1,22 @@
+- name: Find executables in tempdir
+  ansible.windows.win_find:
+    paths: "{{ tempdir }}"
+    patterns: '*.exe' 
+  register: exe_list
+
+- name: Fetch .CS source code
+  fetch:
+    flat: true
+    validate_checksum: yes
+    src: "{{ item.path }}"
+    dest: codemaker/cs/
+  with_items: "{{ file_list.files }}"
+
+- name: Fetch executables 
+  fetch:
+    flat: true
+    validate_checksum: yes
+    src: "{{ item.path }}"
+    dest: codemaker/exe/
+  with_items: "{{ exe_list.files }}"
+

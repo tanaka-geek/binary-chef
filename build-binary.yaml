@@ -1,0 +1,70 @@
+---
+
+  - name: Collect information about all VMs
+    hosts: all
+    gather_facts: no
+    tasks:
+      - setup:
+ 
+  - name: Setup
+    hosts: all
+    gather_facts: no
+    roles:
+      - init
+ 
+  - name: Testing Connection to each kali and windows
+    hosts: all
+    gather_facts: no
+    roles:
+      - test_connection
+
+  - name: Make sure metasploit is updated on Kali
+    hosts: kali
+    gather_facts: no
+    roles:
+      - 1_install_msfencoder
+
+  - name: Create payload on Kali
+    hosts: kali
+    gather_facts: no
+    roles:
+      - 2_create_payload
+
+  - name: Create CS on Windows based on Template.j2 in src on localhost
+    hosts: windows
+    gather_facts: no
+    roles:
+      - 3_create_cs
+
+  - name: Compile CS on Windows to Executables
+    hosts: windows
+    gather_facts: no
+    roles:
+      - 4_create_exe
+
+  - name: Fetch Executables from Windows to locahost
+    hosts: windows
+    gather_facts: no
+    roles:
+      - 5_fetch_exe
+
+  - name:  Convert Executables to Powershell
+    hosts: windows
+    gather_facts: no
+    roles:
+      - 6_create_ps1
+
+  # - name:  Obfuscate powershell scripts with chameleon - not necessary for OSEP
+  #   hosts: kali
+  #   gather_facts: no
+  #   roles:
+  #     - 7_obfuscate_ps1
+
+  # - hosts: localhost
+  #   tasks:
+  #   - name: Synchronize the codemaker output to shared folder
+  #     copy:
+  #       src: /Users/administrator/Git/binary-chef/codemaker/    
+  #       dest: /Users/administrator/Shared/codemaker/
+
+

@@ -1,0 +1,4 @@
+- name: clean up
+  file:
+    path: /tmp/.ps1
+    state: absent

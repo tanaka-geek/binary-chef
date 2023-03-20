@@ -1,0 +1,4 @@
+- name: clean up
+  ansible.windows.win_file:
+    path: "{{ tempdir }}"
+    state: absent

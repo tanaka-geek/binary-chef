@@ -1,0 +1,26 @@
+[kali]
+169.254.217.2
+
+[kali:vars]
+ansible_host=169.254.217.2
+ansible_port=22
+ansible_ssh_user=XXXXX
+ansible_python_interpreter=python3
+# Optional for SSH
+# ansible_ssh_private_key_file=~/.ssh/kali.private
+
+[windows]
+169.254.217.3
+
+[windows:vars]
+ansible_host=169.254.217.3
+ansible_user=XXXXX
+ansible_password=XXXXX
+ansible_connection=winrm
+ansible_port=5986
+ansible_winrm_server_cert_validation=ignore
+ansible_winrm_scheme=https
+#ansible_python_interpreter=c:\Python\python
+ansible_python_interpreter=python3 
+# Option for SSH
+ansible_ssh_private_key_file=~/.ssh/win11.private

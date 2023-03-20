@@ -1,0 +1,6 @@
+---
+  - name: Create CS on Windows based on Template.j2 in src on localhost
+    hosts: windows
+    gather_facts: no
+    roles:
+      - xorbase64

@@ -1,0 +1,38 @@
+- name: Create directory structure
+  ansible.windows.win_file:
+    path: "{{ tempdir }}"
+    state: directory
+
+- name: "[*]Important: Encoding Command"
+  ansible.windows.win_shell: $key = 0x64; $str = "{{ command }}"; $Bytes = [System.Text.Encoding]::Unicode.GetBytes($str); $enc = foreach($byte in $Bytes){$byte -bxor $key}; $insertiondata = [Convert]::ToBase64String($enc); echo $insertiondata
+  register: insertiondata_
+
+- name: Register Fact
+  set_fact:
+    insertiondata: "{{ insertiondata_.stdout | trim}}"
+
+- name: Put commandToEncode.j2 file in Temp directory
+  template:
+    src: commandToEncode.j2
+    dest: "{{ tempdir }}"
+
+- name: Producing encodedcommand fact
+  ansible.windows.win_shell: "$Text = Get-Content '{{ tempdir }}commandToEncode.j2'; $Bytes = [System.Text.Encoding]::Unicode.GetBytes($Text); $EncodedText =[Convert]::ToBase64String($Bytes); echo $EncodedText"
+  register: encodedcommand_
+  notify: clean up
+
+- name: Register Fact 
+  set_fact:
+    encodedcommand: "powershell -sta -NonI -nop -Exec Bypass -EncodedCommand {{ encodedcommand_.stdout | trim}}"
+  
+- name: Copy Ansible facts to a File
+  copy:
+    content: "{{ encodedcommand }}"
+    dest: "{{ tempdir }}ansible_facts_details"
+
+- name: fetch encodedcommand content
+  fetch:
+    flat: true
+    src: "{{ tempdir }}ansible_facts_details"
+    dest: codemaker/encoded_command/main.ps1
+

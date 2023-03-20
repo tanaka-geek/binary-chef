@@ -1,0 +1,18 @@
+- name: Ensure metasploit-framework is installed and in working state
+  ansible.builtin.apt: 
+    name: metasploit-framework  
+
+- name: Update repositories cache and install "metasploit-framework" package
+  become: true
+  ansible.builtin.apt:
+    name: metasploit-framework
+    state: latest
+    update_cache: no
+
+- name: Copy msfencoder.py script
+  become: true
+  ansible.builtin.copy:
+    src: ../templates/msfencoder.py
+    dest: /opt/msfencoder.py
+    mode: '0755'
+

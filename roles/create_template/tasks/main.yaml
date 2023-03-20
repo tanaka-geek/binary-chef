@@ -1,0 +1,19 @@
+- name: Load data
+  slurp:
+    src: /tmp/payload.txt
+  register: payloadOut
+
+- name: Decode data and store as fact # You can skip this if you want to use the right hand side directly...
+  set_fact:
+    cacheable: true
+    delegate_to: groups['windows']    # localhost の set_fact として実行う
+    delegate_facts: true      # delegate 時の fact 更新を許可
+    payloadContent: "{{ payloadOut.content | b64decode }}"
+
+# - name: Set variable payloadContent 
+#   command: "echo {{payloadContent}}}"  
+
+# - name: "Set variables"
+#   set_fact:
+#     user_name: "admin"
+#     user_permissions: "rwx"
