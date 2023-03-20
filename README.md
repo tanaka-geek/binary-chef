@@ -1,7 +1,7 @@
 
 # Binary Chef
 
-As of 2/1/2023, you can build executables, convert it to powershell, and obfuscate the *.ps1 automatically.
+As of 2/1/2023, you can build executables, convert it to powershell, and obfuscate the *.ps1 automatically in Ansible!
 
 This tool will help you with compiling executable binaries automatically. Using the Jinja Template, C# file, it accomplish automated insertion of shellcode block. Also it supports automated obfuscation in Chameleon
 
