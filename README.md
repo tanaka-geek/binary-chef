@@ -83,7 +83,7 @@ you need `pip3 install pywinrm` to access windows with Ansible remotely.
 
 Once you are able to connect to VMs, you need to specify the variables in `groups_vars/all.yaml`.
 
-variable you need to change are `msfencoder` arguments and `compiler`.
+variable you need to change are `msfencoder` arguments. If you're not using  VSCode2022 Community then specify your prefered csc.exe in `compiler`.
 
 ```yaml
 # Linux
